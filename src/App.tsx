@@ -103,7 +103,11 @@ function App() {
   const handleSaveClick = () => {
     const csv = shelves
       .filter(shelf => shelf.length > 0)
-      .reduce((prev, curr) => `${prev}${curr.map(c => c[11]).join(',')}\n`, '');
+      .reduce(
+        (prev, curr) =>
+          `${prev}${curr.map(c => `"${c[6]}\n${c[5]} (${c[7]}@${c[8]})\nSVC: ${c[11]}${c[12]}\nUPC: ${c[20]}${c[12]}"`).join(',')}\n`,
+        ''
+      );
 
     const data = new Blob([csv], {
       type: 'text/csv',

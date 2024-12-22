@@ -1,5 +1,5 @@
 import { PlusIcon } from '@radix-ui/react-icons';
-import { ChangeEvent, FormEvent, useCallback, useState } from 'react';
+import { ChangeEvent, createRef, FormEvent, RefObject, useCallback, useEffect, useRef, useState } from 'react';
 
 import Spinner from './components/spinner';
 import { Card, CardHeader, CardTitle, CardDescription } from './components/ui/card';
@@ -15,9 +15,19 @@ function App() {
   const [current, setCurrent] = useState(0);
   const [itemCode, setItemCode] = useState('');
   const [shelves, setShelves] = useState<string[][][]>([[]]);
+  const shelfRefs = useRef<RefObject<HTMLDivElement>[]>([createRef()]);
 
   const { toast } = useToast();
   const { items, loading, load } = useBook();
+
+  const currentShelf = shelves[current];
+  useEffect(() => {
+    console.log('scrolling', current);
+    shelfRefs.current.at(current)?.current?.scrollTo({
+      left: shelfRefs.current.at(current)?.current?.scrollWidth,
+      behavior: 'smooth',
+    });
+  }, [currentShelf, current]);
 
   const handleFileChange = useCallback(
     async (e: ChangeEvent<HTMLInputElement>) => {
@@ -62,8 +72,14 @@ function App() {
       return;
     }
 
-    shelves[current].push(item);
+    setShelves(prev => [...prev.slice(0, current), [...(prev.at(current) ?? []), item], ...prev.slice(current + 1)]);
     setItemCode('');
+  };
+
+  const handleAddShelfClick = () => {
+    setShelves([...shelves, []]);
+    setCurrent(shelves.length);
+    shelfRefs.current.push(createRef<HTMLDivElement>());
   };
 
   const handleMissingItemsClick = () => {
@@ -211,6 +227,7 @@ function App() {
             {shelves.map((level, levelIndex) => (
               <ScrollArea
                 key={levelIndex}
+                ref={shelfRefs.current[levelIndex]}
                 onClick={() => setCurrent(levelIndex)}
                 className={cn('h-fit min-h-[166px] whitespace-nowrap border border-input p-4 first:rounded-t', {
                   'border-blue-400': current === levelIndex,
@@ -245,10 +262,7 @@ function App() {
               <Button
                 tabIndex={3}
                 variant='default'
-                onClick={() => {
-                  setShelves([...shelves, []]);
-                  setCurrent(shelves.length);
-                }}
+                onClick={handleAddShelfClick}
               >
                 Add Shelf
               </Button>
